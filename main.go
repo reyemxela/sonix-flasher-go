@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	version        = "v1.0.0"
+	version        = "v1.0.1"
 	cmdBase        = 0x55AA00
 	cmdInit        = cmdBase + 1
 	cmdPrepare     = cmdBase + 5
@@ -46,7 +46,7 @@ func main() {
 	for _, d := range hid.Enumerate(uint16(vid), uint16(pid)) {
 		if d.Interface <= 0 {
 			devices = append(devices, d)
-			fmt.Printf("found device %04x:%04x - %s\n", d.VendorID, d.ProductID, DeviceNames[int(d.VendorID)][int(d.ProductID)])
+			fmt.Printf("found device %04x:%04x - %s\n\n", d.VendorID, d.ProductID, DeviceNames[int(d.VendorID)][int(d.ProductID)])
 		}
 	}
 
@@ -58,7 +58,7 @@ func main() {
 
 	dev, err := devices[0].Open()
 	if err != nil {
-		ErrorExit("ERROR: opening device: " + err.Error())
+		ErrorExit("ERROR: opening device: %v", err.Error())
 	}
 	vid = int(dev.VendorID)
 	pid = int(dev.ProductID)
@@ -67,15 +67,6 @@ func main() {
 	// if we don't have a device entry, set a default
 	if conf.maxFirmwareSize == 0 {
 		conf.maxFirmwareSize = F240
-	}
-
-	// read firmware file
-	firmware, err := ReadFirmware(*filename)
-	if err != nil {
-		ErrorExit("ERROR: reading firmware: " + err.Error())
-	}
-	if len(firmware) > conf.maxFirmwareSize {
-		ErrorExit("ERROR: firmware file too large")
 	}
 
 	// get/check offset
@@ -89,6 +80,17 @@ func main() {
 
 	if offset%64 != 0 {
 		ErrorExit("ERROR: offset must be divisible by 64")
+	}
+
+	// read firmware file
+	firmware, err := ReadFirmware(*filename)
+	if err != nil {
+		ErrorExit("ERROR: reading firmware: %v", err.Error())
+	}
+	if len(firmware)+offset > conf.maxFirmwareSize {
+		ErrorExit("ERROR: firmware + offset too large\n"+
+			"input:    %v bytes\n"+
+			"chip max: %v bytes", len(firmware)+offset, conf.maxFirmwareSize)
 	}
 
 	fmt.Printf("------------------------------------------\n"+

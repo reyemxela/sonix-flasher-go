@@ -29,8 +29,8 @@ func ToBytes(i ...int) []byte {
 	return buf.Bytes()
 }
 
-// ErrorExit prints out the specified string, then exits with code 1.
-func ErrorExit(s string) {
-	fmt.Println(s)
+// ErrorExit prints out the specified format string, then exits with code 1.
+func ErrorExit(s string, f ...interface{}) {
+	fmt.Printf(s+"\n\nExiting\n", f...)
 	os.Exit(1)
 }

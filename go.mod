@@ -1,4 +1,4 @@
-module sonix-flasher-go
+module github.com/reyemxela/sonix-flasher-go
 
 go 1.16
 

@@ -15,17 +15,17 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Go build linux
-        run: go build -ldflags "-w" .
+        run: go build -ldflags "-w -s" .
       
       - name: Chmod/compress
         run: |
               chmod +x sonix-flasher-go
-              tar -cvf sonix-flasher-go_linux.tar.gz sonix-flasher-go
+              tar -cvzf sonix-flasher-go_linux.tar.gz sonix-flasher-go
         
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: sonix-flasher-go_linux.tar.gz
+          name: build
           path: sonix-flasher-go_linux.tar.gz
 
   # build windows
@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Go build windows
-        run: go build -ldflags "-w" .
+        run: go build -ldflags "-w -s" .
       
       - name: Compress
         run: powershell Compress-Archive sonix-flasher-go.exe sonix-flasher-go_windows.zip
@@ -45,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: sonix-flasher-go_windows.zip
+          name: build
           path: sonix-flasher-go_windows.zip
 
   # build mac
@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Go build mac
-        run: go build -ldflags "-w" .
+        run: go build -ldflags "-w -s" .
       
       - name: Chmod/compress
         run: |
@@ -67,7 +67,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: sonix-flasher-go_mac.zip
+          name: build
           path: sonix-flasher-go_mac.zip
 
   # create release
@@ -86,7 +86,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body_path: latest-CHANGELOG.md
-          files: |
-            sonix-flasher-go_linux.tar.gz
-            sonix-flasher-go_windows.zip
-            sonix-flasher-go_mac.zip
+          files: build/*

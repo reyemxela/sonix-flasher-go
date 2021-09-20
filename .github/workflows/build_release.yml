@@ -1,0 +1,92 @@
+name: Build and release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  # build linux
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Go build linux
+        run: go build -ldflags "-w" .
+      
+      - name: Chmod/compress
+        run: |
+              chmod +x sonix-flasher-go
+              tar -cvf sonix-flasher-go_linux.tar.gz sonix-flasher-go
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sonix-flasher-go_linux.tar.gz
+          path: sonix-flasher-go_linux.tar.gz
+
+  # build windows
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Go build windows
+        run: go build -ldflags "-w" .
+      
+      - name: Compress
+        run: powershell Compress-Archive sonix-flasher-go.exe sonix-flasher-go_windows.zip
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sonix-flasher-go_windows.zip
+          path: sonix-flasher-go_windows.zip
+
+  # build mac
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Go build mac
+        run: go build -ldflags "-w" .
+      
+      - name: Chmod/compress
+        run: |
+              chmod +x sonix-flasher-go
+              zip -r sonix-flasher-go_mac.zip sonix-flasher-go
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sonix-flasher-go_mac.zip
+          path: sonix-flasher-go_mac.zip
+
+  # create release
+  release:
+    needs: [build-linux, build-windows, build-mac]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+
+      - name: Generate changelog
+        run: awk '/^## / {if (p) {exit}; {p=1}} p' CHANGELOG.md > latest-CHANGELOG.md
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: latest-CHANGELOG.md
+          files: |
+            sonix-flasher-go_linux.tar.gz
+            sonix-flasher-go_windows.zip
+            sonix-flasher-go_mac.zip

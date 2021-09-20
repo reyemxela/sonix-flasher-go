@@ -6,73 +6,48 @@ on:
       - "v*.*.*"
 
 jobs:
-  # build linux
-  build-linux:
-    runs-on: ubuntu-latest
+  build-matrix:
+    strategy:
+      matrix:
+        build-os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        include:
+          - build-os: "ubuntu-latest"
+            archive-name: "sonix-flasher-go_linux.tar.gz"
+            archive-cmd: |
+                          chmod +x sonix-flasher-go
+                          tar -cvzf sonix-flasher-go_linux.tar.gz sonix-flasher-go
+
+          - build-os: "windows-latest"
+            archive-name: "sonix-flasher-go_windows.zip"
+            archive-cmd: powershell Compress-Archive sonix-flasher-go.exe sonix-flasher-go_windows.zip
+
+          - build-os: "macos-latest"
+            archive-name: "sonix-flasher-go_mac.zip"
+            archive-cmd: |
+                          chmod +x sonix-flasher-go
+                          zip -r sonix-flasher-go_mac.zip sonix-flasher-go
+
+    runs-on: ${{ matrix.build-os }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       
-      - name: Go build linux
-        run: go build -ldflags "-w -s" .
-      
-      - name: Chmod/compress
-        run: |
-              chmod +x sonix-flasher-go
-              tar -cvzf sonix-flasher-go_linux.tar.gz sonix-flasher-go
-        
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: build
-          path: sonix-flasher-go_linux.tar.gz
-
-  # build windows
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      
-      - name: Go build windows
+      - name: Go build ${{ matrix.build-os }}
         run: go build -ldflags "-w -s" .
       
       - name: Compress
-        run: powershell Compress-Archive sonix-flasher-go.exe sonix-flasher-go_windows.zip
+        run: ${{ matrix.archive-cmd }}
         
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: build
-          path: sonix-flasher-go_windows.zip
-
-  # build mac
-  build-mac:
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      
-      - name: Go build mac
-        run: go build -ldflags "-w -s" .
-      
-      - name: Chmod/compress
-        run: |
-              chmod +x sonix-flasher-go
-              zip -r sonix-flasher-go_mac.zip sonix-flasher-go
-        
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: build
-          path: sonix-flasher-go_mac.zip
+          path: ${{ matrix.archive-name }}
 
   # create release
   release:
-    needs: [build-linux, build-windows, build-mac]
+    needs: build-matrix
     runs-on: ubuntu-latest
 
     steps:
